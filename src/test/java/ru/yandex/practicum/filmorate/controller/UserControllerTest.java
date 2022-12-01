@@ -181,7 +181,6 @@ public class UserControllerTest {
         user.setName(name);
         user.setEmail(email);
         user.setBirthday(birthday);
-
         return user;
     }
 }
