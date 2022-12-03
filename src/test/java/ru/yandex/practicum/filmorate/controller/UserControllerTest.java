@@ -102,21 +102,6 @@ public class UserControllerTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenNotValidEmail() {
-        final ValidationException exception = assertThrows(
-
-                ValidationException.class,
-                new Executable() {
-                    @Override
-                    public void execute() {
-                        userController.addUser(createUser(1,
-                                "User", "Name", "mailya.ru@","2000-12-28"));
-                    }
-                });
-        assertEquals("Почта неправильная!", exception.getMessage());
-    }
-
-    @Test
     void shouldThrowExceptionWhenEmptyLogin() {
         final ValidationException exception = assertThrows(
 
