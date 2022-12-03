@@ -6,11 +6,12 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
+import javax.validation.Valid;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+
 @Slf4j
 @RestController
 @RequestMapping("/films")
@@ -23,8 +24,11 @@ public class FilmController {
         films = new HashMap<>();
     }
 
+    // Как @Valid действует я примерно понял. Можно убрать лишние проверки в функциях.
+    // Но я не понял, как это можно было бы учесть в Unit-тестах. Или пока Unit-тесты не нужны?
+
     @PostMapping
-    public Film addFilm(@RequestBody Film film) {
+    public Film addFilm(@Valid @RequestBody Film film) {
         log.info("Добавление фильма {}", film);
 
         if(film == null){
@@ -42,7 +46,7 @@ public class FilmController {
             throw new ValidationException("Описание фильма превышает 200 символов!");
         }
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(Constants.DATE_PATTERN);
         LocalDate dateFilm = LocalDate.parse(film.getReleaseDate(), formatter);
 
         if(dateFilm.isBefore(LocalDate.of(1895, 12, 28))){
@@ -64,7 +68,7 @@ public class FilmController {
     }
 
     @PutMapping
-    public Film updateFilm(@RequestBody Film film) {
+    public Film updateFilm(@Valid  @RequestBody Film film) {
         log.info("Изменение фильма {}", film);
 
         if(films.containsKey(film.getId())) {

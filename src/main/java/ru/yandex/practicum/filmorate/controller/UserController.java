@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
+import javax.validation.Valid;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -24,7 +25,7 @@ public class UserController {
     }
 
     @PostMapping
-    public User addUser(@RequestBody User user) {
+    public User addUser(@Valid @RequestBody User user) {
         log.info("Добавление нового пользователя {}", user);
 
         if(user == null){
@@ -47,7 +48,7 @@ public class UserController {
             user.setName(user.getLogin());
         }
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(Constants.DATE_PATTERN);
         LocalDate dateFilm = LocalDate.parse(user.getBirthday(), formatter);
 
         if(dateFilm.isAfter(LocalDate.now())){
@@ -64,7 +65,7 @@ public class UserController {
     }
 
     @PutMapping
-    public User updateUser(@RequestBody User user) {
+    public User updateUser(@Valid @RequestBody User user) {
         log.info("Изменение пользователя {}", user);
         if(users.containsKey(user.getId())) {
             users.put(user.getId(), user);
