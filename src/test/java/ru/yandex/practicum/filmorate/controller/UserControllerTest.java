@@ -6,7 +6,11 @@ import org.junit.jupiter.api.function.Executable;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.user.UserService;
+import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -16,7 +20,9 @@ public class UserControllerTest {
 
     @BeforeEach
     void beforeEach() {
-        userController = new UserController(new InMemoryUserStorage());
+        UserStorage userStorage = new InMemoryUserStorage();
+        UserService userService = new UserService(userStorage);
+        userController = new UserController(userStorage, userService);
     }
 
     @Test

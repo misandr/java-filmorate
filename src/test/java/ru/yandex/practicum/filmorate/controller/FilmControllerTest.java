@@ -6,6 +6,8 @@ import org.junit.jupiter.api.function.Executable;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.film.FilmService;
+import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -15,7 +17,9 @@ public class FilmControllerTest {
 
     @BeforeEach
     void beforeEach() {
-        filmController = new FilmController(new InMemoryFilmStorage());
+        FilmStorage filmStorage = new InMemoryFilmStorage();
+        FilmService filmService = new FilmService(filmStorage);
+        filmController = new FilmController(filmStorage, filmService);
     }
     @Test
     void addFilm() {

@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.service.film;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -13,6 +14,7 @@ import java.util.TreeSet;
 public class FilmService {
     private final FilmStorage filmStorage;
 
+    @Autowired
     public FilmService(FilmStorage filmStorage){
         this.filmStorage = filmStorage;
     }

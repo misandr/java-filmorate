@@ -5,6 +5,7 @@ import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.PositiveOrZero;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -22,6 +23,7 @@ public class Film implements Comparable<Film>{
     @NotNull
     @NotBlank
     private String releaseDate;
+    @PositiveOrZero
     private int duration;
 
     private Set<Integer> likes;

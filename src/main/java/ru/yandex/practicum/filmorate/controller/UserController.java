@@ -8,6 +8,8 @@ import ru.yandex.practicum.filmorate.service.user.UserService;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @Slf4j
@@ -18,10 +20,9 @@ public class UserController {
     private final UserService userService;
 
     @Autowired
-    public UserController(UserStorage userStorage) {
+    public UserController(UserStorage userStorage, UserService userService) {
         this.userStorage = userStorage;
-
-        userService = new UserService(userStorage);
+        this.userService = userService;
     }
 
     @PostMapping
@@ -40,35 +41,41 @@ public class UserController {
 
     @GetMapping
     public List<User> getUsers() {
+        log.info("Получение списка пользователей.");
+
         return userStorage.getUsers();
     }
 
     @GetMapping("/{userId}")
-    public User findById(@PathVariable Integer userId) {
+    public User findById(@PathVariable @Min(1) Integer userId) {
+        log.info("Получение пользователя с id {}", userId);
+
         return userStorage.getUser(userId);
     }
 
     @PutMapping("/{id}/friends/{friendId}")
-    public User addFriend(@PathVariable Integer id, @PathVariable Integer friendId) {
+    public User addFriend(@PathVariable @Min(1) Integer id, @PathVariable @Min(1) Integer friendId) {
         log.info("Добавление друга {} к пользователю {}", friendId, id);
 
         return userService.addFriend(id, friendId);
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")
-    public User removeFriend(@PathVariable Integer id, @PathVariable Integer friendId) {
+    public User removeFriend(@PathVariable @Min(1) Integer id, @PathVariable @Min(1) Integer friendId) {
         log.info("Удаление друга {} у пользователя {}", friendId, id);
 
         return userService.removeFriend(id, friendId);
     }
 
     @GetMapping("/{id}/friends")
-    public List<User> getFriends(@PathVariable Integer id) {
+    public List<User> getFriends(@PathVariable @Min(1) Integer id) {
+        log.info("Получение друзей пользователя с id {}", id);
+
         return userService.getFriends(id);
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
-    public List<User> getCommonFriends(@PathVariable Integer id, @PathVariable Integer otherId) {
+    public List<User> getCommonFriends(@PathVariable @Min(1) Integer id, @PathVariable @Min(1) Integer otherId) {
         log.info("Список друзей пользователя {}, общих с пользователем {} ", id, otherId);
 
         return userService.getCommonFriends(id, otherId);

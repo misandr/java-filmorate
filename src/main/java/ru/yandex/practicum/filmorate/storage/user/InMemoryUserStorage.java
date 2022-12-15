@@ -7,6 +7,7 @@ import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
+import javax.validation.constraints.Email;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -29,6 +30,7 @@ public class InMemoryUserStorage implements UserStorage {
             throw new ValidationException("Запрос пустой!");
         }
 
+        //При @Email можно было бы убрать, но не знаю как в тесте тогда проверить.
         if(user.getEmail().isBlank() || !user.getEmail().contains("@")){
             log.warn("Почта неправильная!");
             throw new ValidationException("Почта неправильная!");

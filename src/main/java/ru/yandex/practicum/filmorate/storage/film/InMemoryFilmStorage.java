@@ -50,6 +50,7 @@ public class InMemoryFilmStorage implements FilmStorage {
             throw new ValidationException("Фильмы ещё не придумали!");
         }
 
+        //При @PositiveOrZero можно было бы убрать, но не знаю как в тесте тогда проверить.
         if(film.getDuration()< 0){
             log.warn("Длительность фильма отрицательная!");
             throw new ValidationException("Длительность фильма отрицательная!");
