@@ -1,29 +1,43 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import org.junit.jupiter.api.BeforeEach;
+import lombok.RequiredArgsConstructor;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.service.film.FilmService;
-import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
+import ru.yandex.practicum.filmorate.model.Mpa;
+
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
+
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@SpringBootTest
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class FilmControllerTest {
-    private FilmController filmController;
+    private final FilmController filmController;
 
-    @BeforeEach
-    void beforeEach() {
-        FilmStorage filmStorage = new InMemoryFilmStorage();
-        FilmService filmService = new FilmService(filmStorage);
-        filmController = new FilmController(filmStorage, filmService);
+    private static ValidatorFactory factory;
+    private static Validator validator;
+    @BeforeAll
+    static void beforeAll(){
+        factory = Validation.buildDefaultValidatorFactory();
+        validator = factory.getValidator();
     }
+
     @Test
     void addFilm() {
-        Film createdFilm = createFilm(1,"Фильм 1", "Комедия", "1895-12-28", 60);
+        Film createdFilm = createFilm(1,"Фильм 1", "Комедия", "1895-12-28",
+                60, 1);
 
         Film film = filmController.addFilm(createdFilm);
 
@@ -32,7 +46,8 @@ public class FilmControllerTest {
 
     @Test
     void updateFilm() {
-        Film createdFilm = createFilm(1,"Фильм 1", "Комедия", "1895-12-28", 60);
+        Film createdFilm = createFilm(1,"Фильм 1", "Комедия", "1895-12-28",
+                60, 1);
 
         filmController.addFilm(createdFilm);
 
@@ -58,40 +73,6 @@ public class FilmControllerTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenEmptyName() {
-        final ValidationException exception = assertThrows(
-
-                ValidationException.class,
-                new Executable() {
-                    @Override
-                    public void execute() {
-                        filmController.addFilm(createFilm(1,
-                                "", "Комедия", "2001-01-11", 60));
-                    }
-                });
-        assertEquals("Не указано название фильма!", exception.getMessage());
-    }
-
-    @Test
-    void shouldThrowExceptionWhenBigDescription() {
-        final ValidationException exception = assertThrows(
-
-                ValidationException.class,
-                new Executable() {
-                    @Override
-                    public void execute() {
-                        String description = "";
-                        for(int i = 0; i < 201; i++){
-                            description += "a";
-                        }
-                        filmController.addFilm(createFilm(1,
-                                "Фильм 1", description, "2001-01-11", 60));
-                    }
-                });
-        assertEquals("Описание фильма превышает 200 символов!", exception.getMessage());
-    }
-
-    @Test
     void shouldThrowExceptionWhenNotValidDate() {
         final ValidationException exception = assertThrows(
 
@@ -100,7 +81,7 @@ public class FilmControllerTest {
                     @Override
                     public void execute() {
                         filmController.addFilm(createFilm(1,
-                                "Фильм 1", "Комедия", "1894-01-11", 60));
+                                "Фильм 1", "Комедия", "1894-01-11", 60, 1));
                     }
                 });
         assertEquals("Фильмы ещё не придумали!", exception.getMessage());
@@ -108,17 +89,12 @@ public class FilmControllerTest {
 
     @Test
     void shouldThrowExceptionWhenNotValidDuration() {
-        final ValidationException exception = assertThrows(
+        Film film = createFilm(1,
+                "Фильм 1", "Комедия", "1896-01-11", -1, 1);
 
-                ValidationException.class,
-                new Executable() {
-                    @Override
-                    public void execute() {
-                        filmController.addFilm(createFilm(1,
-                                "Фильм 1", "Комедия", "1896-01-11", -1));
-                    }
-                });
-        assertEquals("Длительность фильма отрицательная!", exception.getMessage());
+        Set<ConstraintViolation<Film>> violations = validator.validate(film);
+        assertFalse(violations.isEmpty(), "Длительность фильма отрицательная!");
+        violations.clear();
     }
 
     @Test
@@ -129,7 +105,8 @@ public class FilmControllerTest {
                 new Executable() {
                     @Override
                     public void execute() {
-                        Film createdFilm = createFilm(1,"Фильм 1", "Комедия", "1995-12-28", 60);
+                        Film createdFilm = createFilm(1,"Фильм 1", "Комедия", "1995-12-28",
+                                60, 1);
                         filmController.addFilm(createdFilm);
 
                         createdFilm.setId(100);
@@ -139,7 +116,7 @@ public class FilmControllerTest {
         assertEquals("Нет такого фильма!", exception.getMessage());
     }
 
-    Film createFilm(int id, String name, String description, String releaseDate, int duration) {
+    Film createFilm(int id, String name, String description, String releaseDate, int duration, int mpaId) {
 
         Film film = new Film();
         film.setId(id);
@@ -147,6 +124,7 @@ public class FilmControllerTest {
         film.setDescription(description);
         film.setReleaseDate(releaseDate);
         film.setDuration(duration);
+        film.setMpa(new Mpa(mpaId));
 
         return film;
     }

@@ -1,23 +1,20 @@
 package ru.yandex.practicum.filmorate.model;
 
 import lombok.Data;
-import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.PositiveOrZero;
-import java.util.HashSet;
-import java.util.Set;
+import javax.validation.constraints.*;
+import java.util.*;
 
 @Data
-public class Film implements Comparable<Film>{
+public class Film{
     private int id;
 
     @NotNull
-    @NotBlank
+    @NotBlank(message = "Не указано название фильма!")
     private String name;
 
     @NotNull
+    @Size(min = 0, max = 200, message = "Описание фильма превышает 200 символов!")
     private String description;
 
     @NotNull
@@ -26,32 +23,26 @@ public class Film implements Comparable<Film>{
     @PositiveOrZero
     private int duration;
 
-    private Set<Integer> likes;
+    private Mpa mpa;
+    private Set<Genre> genres;
 
     public Film(){
-        likes = new HashSet<>();
-    }
-    public void addLike(Integer userId) {
-        likes.add(userId);
-    }
-    public void removeLike(Integer userId) {
-        if(likes.contains(userId)) {
-            likes.remove(userId);
-        }else{
-            throw new NotFoundException("Не найден userId!");
-        }
+        genres = new TreeSet<>();
     }
 
-    public int getCountLikes(){
-        return likes.size();
+    public Genre getGenre(Integer id){
+        for (Genre genre : genres)
+            if(id == genre.getId())
+                return genre;
+        return null;
     }
 
-    @Override
-    public int compareTo(Film film) {
-        if(film.getCountLikes() > getCountLikes()) {
-            return 1;
-        }else{
-            return -1;
-        }
+    public void addGenre(Genre genre){
+         genres.add(genre);
+    }
+
+    public void sortGenres() {
+        Set<Genre> sortedGenres = new TreeSet<>(genres);
+        genres = sortedGenres;
     }
 }

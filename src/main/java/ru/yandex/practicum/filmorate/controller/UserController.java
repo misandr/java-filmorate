@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.user.UserService;
@@ -9,7 +10,6 @@ import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @Slf4j
@@ -20,7 +20,7 @@ public class UserController {
     private final UserService userService;
 
     @Autowired
-    public UserController(UserStorage userStorage, UserService userService) {
+    public UserController(@Qualifier("userDbStorage")UserStorage userStorage, UserService userService) {
         this.userStorage = userStorage;
         this.userService = userService;
     }
@@ -54,17 +54,15 @@ public class UserController {
     }
 
     @PutMapping("/{id}/friends/{friendId}")
-    public User addFriend(@PathVariable @Min(1) Integer id, @PathVariable @Min(1) Integer friendId) {
+    public void addFriend(@PathVariable @Min(1) Integer id, @PathVariable @Min(1) Integer friendId) {
         log.info("Добавление друга {} к пользователю {}", friendId, id);
-
-        return userService.addFriend(id, friendId);
+        userService.addFriend(id, friendId);
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")
-    public User removeFriend(@PathVariable @Min(1) Integer id, @PathVariable @Min(1) Integer friendId) {
+    public void removeFriend(@PathVariable @Min(1) Integer id, @PathVariable @Min(1) Integer friendId) {
         log.info("Удаление друга {} у пользователя {}", friendId, id);
-
-        return userService.removeFriend(id, friendId);
+        userService.removeFriend(id, friendId);
     }
 
     @GetMapping("/{id}/friends")
