@@ -24,7 +24,8 @@ public class FilmController {
     private final FilmService filmService;
 
     @Autowired
-    public FilmController(@Qualifier("filmDbStorage") FilmStorage filmStorage, FilmService filmService) {
+    public FilmController(@Qualifier("filmDbStorage") FilmStorage filmStorage,
+                          FilmService filmService) {
         this.filmStorage = filmStorage;
         this.filmService = filmService;
     }
@@ -85,28 +86,28 @@ public class FilmController {
     public List<Genre> getGenres() {
         log.info("Получение списка жанров.");
 
-        return filmStorage.getGenres();
+        return filmService.getGenres();
     }
 
     @GetMapping("/genres/{id}")
     public Genre getGenre(@PathVariable @Min(1) Integer id) {
         log.info("Получение жанра с id {}", id);
 
-        return filmStorage.getGenre(id);
+        return filmService.getGenre(id);
     }
 
     @GetMapping("/mpa")
     public List<Mpa> getMpas() {
         log.info("Получение списка MPA.");
 
-        return filmStorage.getMpas();
+        return filmService.getMpas();
     }
 
     @GetMapping("/mpa/{id}")
     public Mpa getMpa(@PathVariable @Min(1) Integer id) {
         log.info("Получение MPA с id {}", id);
 
-        return filmStorage.getMpa(id);
+        return filmService.getMpa(id);
     }
 }
 

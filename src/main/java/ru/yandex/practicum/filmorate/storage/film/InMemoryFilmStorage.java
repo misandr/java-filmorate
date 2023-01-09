@@ -95,24 +95,4 @@ public class InMemoryFilmStorage implements FilmStorage {
             throw new NotFoundException("Нет такого фильма!");
         }
     }
-
-    @Override
-    public List<Genre> getGenres() {
-        return null;
-    }
-
-    @Override
-    public Genre getGenre(Integer id) {
-        return null;
-    }
-
-    @Override
-    public List<Mpa> getMpas() {
-        return null;
-    }
-
-    @Override
-    public Mpa getMpa(Integer id) {
-        return null;
-    }
 }

@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 @Slf4j
 @Component
 @Qualifier("filmDbStorage")
@@ -35,19 +34,26 @@ public class FilmDbStorage implements FilmStorage {
 
     private final JdbcTemplate jdbcTemplate;
     private final Map<Integer, String> genreTables;
+    private final MpaDbStorage mpaDbStorage;
+    private final GenreDbStorage genreDbStorage;
+    private final List<Genre> genres;
 
     @Autowired
-    public FilmDbStorage(JdbcTemplate jdbcTemplate) {
+    public FilmDbStorage(JdbcTemplate jdbcTemplate, MpaDbStorage mpaDbStorage, GenreDbStorage genreDbStorage) {
         this.jdbcTemplate = jdbcTemplate;
+        this.mpaDbStorage = mpaDbStorage;
+        this.genreDbStorage = genreDbStorage;
 
         genreTables = new HashMap<>();
-
+        // Да, попытался закэшировать)
         String sqlQuery = "SELECT * FROM genres";
         List<TableGenre> nameTables = jdbcTemplate.query(sqlQuery, this::makeTableGenre);
 
         for(TableGenre table: nameTables){
             genreTables.put(table.getId(), table.getTableName());
         }
+
+        genres = genreDbStorage.getAll();
     }
 
     @Override
@@ -80,12 +86,12 @@ public class FilmDbStorage implements FilmStorage {
         int id =  keyHolder.getKey().intValue();
         film.setId(id);
 
-        Mpa mpa = getMpa(film.getMpa().getId());
+        Mpa mpa = mpaDbStorage.getById(film.getMpa().getId());
         film.setMpa(mpa);
 
         if(film.getGenres() != null) {
             for (Genre genre: film.getGenres()) {
-                Genre genreDB = getGenre(genre.getId());
+                Genre genreDB = genreDbStorage.getById(genre.getId());
                 genre.setName(genreDB.getName());
                 String genreTable = genreTables.get(genre.getId());
                 String sqlQuery = "INSERT INTO " + genreTable +"(film_id) values (?)";
@@ -112,11 +118,11 @@ public class FilmDbStorage implements FilmStorage {
             throw new NotFoundException("Нет такого фильма!");
         }
 
-        Mpa mpa = getMpa(film.getMpa().getId());
+        Mpa mpa = mpaDbStorage.getById(film.getMpa().getId());
         film.setMpa(mpa);
 
         if(film.getGenres() != null){
-            for(Genre genre: getGenres()){
+            for(Genre genre: genres){
                 Genre findedGenre = film.getGenre(genre.getId());
                 String genreTable = genreTables.get(genre.getId());
                 if(findedGenre != null){
@@ -125,7 +131,7 @@ public class FilmDbStorage implements FilmStorage {
                         sqlQuery = "INSERT INTO " + genreTable + "(film_id) VALUES (?)";
                         jdbcTemplate.update(sqlQuery, film.getId());
                     }
-                    Genre genreDB = getGenre(genre.getId());
+                    Genre genreDB = genreDbStorage.getById(genre.getId());
                     findedGenre.setName(genreDB.getName());
                 }else{
                     sqlQuery = "SELECT * FROM " + genreTable + " WHERE film_id = ?";
@@ -136,7 +142,6 @@ public class FilmDbStorage implements FilmStorage {
                 }
             }
         }else{
-            List<Genre> genres = getGenres();
             for(Genre genre: genres){
                 String genreTable = genreTables.get(genre.getId());
 
@@ -148,58 +153,29 @@ public class FilmDbStorage implements FilmStorage {
             }
         }
 
-        // зачем-то в тестах postman необходим отсортированный список жанров
         film.sortGenres();
         return film;
     }
 
     @Override
     public List<Film> getFilms() {
-        String sqlQuery = "SELECT id, name, description, releaseDate, duration, mpa_id FROM films";
+        String sqlQuery = "SELECT f.id, f.name, description, releaseDate, duration, mpa_id, m.name AS mpa_name " +
+                "FROM films as f " +
+                "INNER JOIN mpas AS m ON f.mpa_id = m.id ";
         return jdbcTemplate.query(sqlQuery, this::makeFilm);
     }
 
     @Override
     public Film getFilm(Integer id) {
-        String sqlQuery = "SELECT id, name, description, releaseDate, duration, mpa_id " +
-                "FROM films WHERE id = ?";
+        String sqlQuery = "SELECT f.id, f.name, description, releaseDate, duration, mpa_id, m.name AS mpa_name " +
+                "FROM films as f " +
+                "INNER JOIN mpas AS m ON f.mpa_id = m.id " +
+                "WHERE f.id = ?";
         try {
             return jdbcTemplate.queryForObject(sqlQuery, this::makeFilm, id);
         }catch(DataAccessException exception) {
             log.warn("Нет такого фильма!");
             throw new NotFoundException("Нет такого фильма!");
-        }
-    }
-
-    @Override
-    public List<Genre> getGenres() {
-        return jdbcTemplate.query("SELECT id, name FROM genres", this::makeGenre);
-    }
-
-    @Override
-    public Genre getGenre(Integer id) {
-        String sqlQuery = "SELECT id, name FROM genres WHERE id = ?";
-        try {
-            return jdbcTemplate.queryForObject(sqlQuery, this::makeGenre, id);
-        }catch(DataAccessException exception) {
-            log.warn("Нет такого жанра!");
-            throw new NotFoundException("Нет такого жанра!");
-        }
-    }
-
-    @Override
-    public List<Mpa> getMpas() {
-        return jdbcTemplate.query("SELECT id, name FROM mpas", this::makeMpa);
-    }
-
-    @Override
-    public Mpa getMpa(Integer id) {
-        String sqlQuery = "SELECT id, name FROM mpas WHERE id = ?";
-        try {
-            return jdbcTemplate.queryForObject(sqlQuery, this::makeMpa, id);
-        }catch(DataAccessException exception) {
-            log.warn("Нет такого MPA!");
-            throw new NotFoundException("Нет такого MPA!");
         }
     }
 
@@ -210,9 +186,8 @@ public class FilmDbStorage implements FilmStorage {
         String description = resultSet.getString("description");
         String releaseDate = resultSet.getString("releaseDate");
         int duration = resultSet.getInt("duration");
-        int mpa_id = resultSet.getInt("mpa_id");
-
-        Mpa mpa = getMpa(mpa_id);
+        int mpaId = resultSet.getInt("mpa_id");
+        String mpaName = resultSet.getString("mpa_name");
 
         Film film = new Film();
         film.setId(id);
@@ -220,36 +195,16 @@ public class FilmDbStorage implements FilmStorage {
         film.setDescription(description);
         film.setReleaseDate(releaseDate);
         film.setDuration(duration);
-        film.setMpa(mpa);
+        film.setMpa(new Mpa(mpaId, mpaName));
 
-        for(Genre genre: getGenres()){
+        for(Genre genre: genres){
             String sqlQuery = "SELECT * FROM " + genreTables.get(genre.getId()) +" WHERE film_id = ?";
             if(jdbcTemplate.queryForRowSet(sqlQuery, film.getId()).next()){
-                film.addGenre(getGenre(genre.getId()));
+                film.addGenre(genreDbStorage.getById(genre.getId()));
             }
         }
 
         return film;
-    }
-
-    private Genre makeGenre(ResultSet resultSet, int rowNum) throws SQLException {
-
-        Integer id = resultSet.getInt("id");
-        String name = resultSet.getString("name");
-
-        Genre genre = new Genre();
-        genre.setId(id);
-        genre.setName(name);
-
-        return genre;
-    }
-    private Mpa makeMpa(ResultSet resultSet, int rowNum) throws SQLException{
-        Integer id = resultSet.getInt("id");
-        String name = resultSet.getString("name");
-
-        Mpa mpa = new Mpa(id, name);
-
-        return mpa;
     }
 
     private TableGenre makeTableGenre(ResultSet resultSet, int rowNum) throws SQLException {
